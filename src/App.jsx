@@ -5,27 +5,40 @@ import {
   UserButton,
   useUser,
 } from "@clerk/clerk-react";
-
 import StockList from "./components/stockList";
+import "./App.css";
 
 function App() {
-  const { user, isLoaded } = useUser();
-
-  if (!isLoaded) {
-    return <p>Loading...</p>;
-  }
+  const { user } = useUser();
 
   return (
-    <header>
+    <div className="app-container">
+      <header>
+        <h2>Finora.io</h2>
+        <h3>Track Your Investments</h3>
+      </header>
+
       <SignedOut>
-        <SignIn />
+        <div className="welcome-message">
+          <p>login to manage your stocks</p>
+          <SignIn />
+        </div>
       </SignedOut>
 
       <SignedIn>
-        <UserButton />
-        {user && <StockList userId={user.id} />}
+        {user ? (
+          <>
+            <div className="user-header">
+              <UserButton />
+              <h4>Welcome, {user.firstName || user.username || "user"}! ✌</h4>
+            </div>
+            {user && <StockList userId={user.id} />}
+          </>
+        ) : (
+          <p>Loading user data...</p>
+        )}
       </SignedIn>
-    </header>
+    </div>
   );
 }
 
