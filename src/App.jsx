@@ -1,6 +1,20 @@
-import { SignedOut, SignedIn, SignIn, UserButton } from "@clerk/clerk-react";
+import {
+  SignedOut,
+  SignedIn,
+  SignIn,
+  UserButton,
+  useUser,
+} from "@clerk/clerk-react";
+
+import StockList from "./components/stockList";
 
 function App() {
+  const { user, isLoaded } = useUser();
+
+  if (!isLoaded) {
+    return <p>Loading...</p>;
+  }
+
   return (
     <header>
       <SignedOut>
@@ -9,6 +23,7 @@ function App() {
 
       <SignedIn>
         <UserButton />
+        {user && <StockList userId={user.id} />}
       </SignedIn>
     </header>
   );
