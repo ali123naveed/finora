@@ -1,40 +1,54 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getDailyPerformance } from "../service/AlphaVantageService";
 import { supabase } from "../lib/supabase";
+import {
+  AddStock,
+  GetWatchlist,
+  RemoveStock,
+} from "../service/supabaseWatchlistService";
 import "../App.css";
 
 export default function StockList({ userId }) {
   const [symbol, setSymbol] = useState("");
-  const [performance, setPerformance] = useState("");
+  const [stocks, setStocks] = useState();
   const [error, setError] = useState("");
+
+  async function HandleFetchStocks() {
+    const data = await GetWatchlist(supabase, userId);
+    setStocks(data);
+  }
 
   async function HandleAddStock(e) {
     e.preventDefault();
-
-    await supabase.from("watchlist").insert([
-      {
-        symbol: symbol.toUpperCase(),
-        user_id: userId,
-      },
-    ]);
     setError("");
-    setPerformance("");
-
-    try {
-      const perf = await getDailyPerformance(symbol.toUpperCase());
-
-      if (perf === null) {
-        setError("No performance data available for this stock.");
-        return;
-      }
-
-      setPerformance(perf);
-    } catch {
-      setError("Failed to fetch stock performance.");
-    }
-
+    const ticker = symbol.toUpperCase();
+    await AddStock(supabase, userId, ticker);
     setSymbol("");
+    HandleFetchStocks();
   }
+
+  async function HandleRemoveStock(id, symbol) {
+    await RemoveStock(supabase, id, symbol);
+    HandleFetchStocks();
+  }
+
+  async function HandleCheckPerformance() {
+    const updated = await Promise.all(
+      stocks.map(async (stock) => ({
+        ...stock,
+        performance: await getDailyPerformance(stock.symbol),
+      })),
+    );
+    setStocks(updated);
+  }
+
+  useEffect(() => {
+    if (userId) HandleFetchStocks();
+  }, [userId]);
+
+  useEffect(() => {
+    if (stocks.length) HandleCheckPerformance();
+  }, [stocks.length]);
 
   return (
     <div>
